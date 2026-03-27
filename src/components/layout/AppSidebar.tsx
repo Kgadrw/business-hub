@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, CreditCard, Building2, Bell, Menu, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Package, CreditCard, Building2, Bell, Settings, Menu, Moon, Sun } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
