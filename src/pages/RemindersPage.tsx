@@ -1,0 +1,189 @@
+import { useState, useMemo } from "react";
+import { useStore } from "@/store/useStore";
+import { useSearchParams } from "react-router-dom";
+import { FilterBar } from "@/components/shared/FilterBar";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { PriorityBadge } from "@/components/shared/PriorityBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { formatDate, formatRelativeDate } from "@/utils/date";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Pencil, Trash2, ArrowUpDown, Bell, CheckCircle2 } from "lucide-react";
+import type { Reminder, RecordStatus } from "@/types";
+
+const defaultReminder: Omit<Reminder, "id" | "createdAt"> = {
+  title: "", relatedType: "general", relatedId: null, reminderDate: "",
+  priority: "medium", status: "pending", message: "",
+};
+
+const statusOpts = [
+  { value: "pending", label: "Pending" },
+  { value: "completed", label: "Completed" },
+  { value: "overdue", label: "Overdue" },
+];
+
+const priorityOpts = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" },
+];
+
+export default function RemindersPage() {
+  const { reminders, addReminder, updateReminder, deleteReminder } = useStore();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState<keyof Reminder>("reminderDate");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [formOpen, setFormOpen] = useState(searchParams.get("new") === "true");
+  const [editing, setEditing] = useState<Reminder | null>(null);
+  const [formData, setFormData] = useState(defaultReminder);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    let data = [...reminders];
+    if (search) {
+      const q = search.toLowerCase();
+      data = data.filter((r) => r.title.toLowerCase().includes(q) || r.message.toLowerCase().includes(q));
+    }
+    if (statusFilter !== "all") data = data.filter((r) => r.status === statusFilter);
+    data.sort((a, b) => {
+      const av = a[sortField], bv = b[sortField];
+      if (av == null || bv == null) return 0;
+      const cmp = typeof av === "string" ? av.localeCompare(bv as string) : 0;
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return data;
+  }, [reminders, search, statusFilter, sortField, sortDir]);
+
+  const toggleSort = (field: keyof Reminder) => {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const openCreate = () => { setEditing(null); setFormData(defaultReminder); setFormOpen(true); };
+  const openEdit = (r: Reminder) => { setEditing(r); setFormData(r); setFormOpen(true); };
+  const handleSave = () => {
+    if (editing) updateReminder(editing.id, formData);
+    else addReminder(formData);
+    setFormOpen(false);
+  };
+
+  const markComplete = (id: string) => updateReminder(id, { status: "completed" });
+
+  const SortHeader = ({ field, children }: { field: keyof Reminder; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(field)}>
+      <span className="flex items-center gap-1">{children}<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+    </TableHead>
+  );
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Reminders</h1>
+          <p className="text-sm text-muted-foreground">{reminders.length} total records</p>
+        </div>
+        <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Reminder</Button>
+      </div>
+
+      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search reminders..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts} />
+
+      {filtered.length === 0 ? (
+        <EmptyState title="No reminders found" icon={<Bell className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Reminder</Button>} />
+      ) : (
+        <div className="rounded-lg border overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortHeader field="title">Title</SortHeader>
+                <TableHead>Type</TableHead>
+                <SortHeader field="reminderDate">Date</SortHeader>
+                <TableHead>Priority</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Message</TableHead>
+                <TableHead className="w-[100px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r) => (
+                <TableRow key={r.id} className="group">
+                  <TableCell className="font-medium">{r.title}</TableCell>
+                  <TableCell className="capitalize">{r.relatedType}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span>{formatDate(r.reminderDate)}</span>
+                      <span className="text-xs text-muted-foreground">{formatRelativeDate(r.reminderDate)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell><PriorityBadge priority={r.priority} /></TableCell>
+                  <TableCell><StatusBadge status={r.status} /></TableCell>
+                  <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">{r.message}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {r.status !== "completed" && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => markComplete(r.id)} title="Mark complete">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Edit Reminder" : "New Reminder"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 mt-2">
+            <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Related Type</Label>
+                <Select value={formData.relatedType} onValueChange={(v) => setFormData({ ...formData, relatedType: v as Reminder["relatedType"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="product">Product</SelectItem>
+                    <SelectItem value="subscription">Subscription</SelectItem>
+                    <SelectItem value="rent">Rent</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Reminder Date</Label><Input type="date" value={formData.reminderDate} onChange={(e) => setFormData({ ...formData, reminderDate: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Priority</Label>
+                <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as Reminder["priority"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{priorityOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label>Status</Label>
+                <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div><Label>Message</Label><Textarea value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} rows={3} /></div>
+            <Button onClick={handleSave} className="w-full">{editing ? "Save Changes" : "Add Reminder"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { deleteReminder(deleteId!); setDeleteId(null); }} />
+    </div>
+  );
+}
