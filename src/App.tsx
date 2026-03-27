@@ -10,6 +10,7 @@ import ProductsPage from "./pages/ProductsPage";
 import SubscriptionsPage from "./pages/SubscriptionsPage";
 import RentPage from "./pages/RentPage";
 import RemindersPage from "./pages/RemindersPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
