@@ -1,0 +1,172 @@
+import { useState, useMemo } from "react";
+import { useStore } from "@/store/useStore";
+import { useSearchParams } from "react-router-dom";
+import { FilterBar } from "@/components/shared/FilterBar";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
+import { formatDate, formatRelativeDate, isOverdue } from "@/utils/date";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Plus, Pencil, Trash2, ArrowUpDown, Building2 } from "lucide-react";
+import type { RentRecord, RecordStatus } from "@/types";
+
+const defaultRent: Omit<RentRecord, "id" | "createdAt"> = {
+  title: "", propertyType: "", contactName: "", rentAmount: 0, paymentFrequency: "monthly",
+  dueDate: "", contractStartDate: "", contractEndDate: "", status: "active", notes: "",
+};
+
+const statusOpts = [
+  { value: "active", label: "Active" },
+  { value: "overdue", label: "Overdue" },
+  { value: "completed", label: "Completed" },
+  { value: "inactive", label: "Inactive" },
+];
+
+export default function RentPage() {
+  const { rentRecords, addRentRecord, updateRentRecord, deleteRentRecord } = useStore();
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortField, setSortField] = useState<keyof RentRecord>("dueDate");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [formOpen, setFormOpen] = useState(searchParams.get("new") === "true");
+  const [editing, setEditing] = useState<RentRecord | null>(null);
+  const [formData, setFormData] = useState(defaultRent);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    let data = [...rentRecords];
+    if (search) {
+      const q = search.toLowerCase();
+      data = data.filter((r) => r.title.toLowerCase().includes(q) || r.contactName.toLowerCase().includes(q));
+    }
+    if (statusFilter !== "all") data = data.filter((r) => r.status === statusFilter);
+    data.sort((a, b) => {
+      const av = a[sortField], bv = b[sortField];
+      const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    return data;
+  }, [rentRecords, search, statusFilter, sortField, sortDir]);
+
+  const toggleSort = (field: keyof RentRecord) => {
+    if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortField(field); setSortDir("asc"); }
+  };
+
+  const openCreate = () => { setEditing(null); setFormData(defaultRent); setFormOpen(true); };
+  const openEdit = (r: RentRecord) => { setEditing(r); setFormData(r); setFormOpen(true); };
+  const handleSave = () => {
+    if (editing) updateRentRecord(editing.id, formData);
+    else addRentRecord(formData);
+    setFormOpen(false);
+  };
+
+  const SortHeader = ({ field, children }: { field: keyof RentRecord; children: React.ReactNode }) => (
+    <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(field)}>
+      <span className="flex items-center gap-1">{children}<ArrowUpDown className="h-3 w-3 text-muted-foreground" /></span>
+    </TableHead>
+  );
+
+  return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Rent Records</h1>
+          <p className="text-sm text-muted-foreground">{rentRecords.length} total records</p>
+        </div>
+        <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Rent Record</Button>
+      </div>
+
+      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search rent records..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts} />
+
+      {filtered.length === 0 ? (
+        <EmptyState title="No rent records found" icon={<Building2 className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Rent Record</Button>} />
+      ) : (
+        <div className="rounded-lg border overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <SortHeader field="title">Title</SortHeader>
+                <TableHead>Type</TableHead>
+                <SortHeader field="contactName">Contact</SortHeader>
+                <SortHeader field="rentAmount">Amount</SortHeader>
+                <SortHeader field="dueDate">Due Date</SortHeader>
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((r) => (
+                <TableRow key={r.id} className="group">
+                  <TableCell className="font-medium">{r.title}</TableCell>
+                  <TableCell>{r.propertyType}</TableCell>
+                  <TableCell>{r.contactName}</TableCell>
+                  <TableCell>${r.rentAmount.toLocaleString()}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span>{formatDate(r.dueDate)}</span>
+                      {isOverdue(r.dueDate) && r.status !== "completed" && <span className="text-xs text-destructive">{formatRelativeDate(r.dueDate)}</span>}
+                    </div>
+                  </TableCell>
+                  <TableCell><StatusBadge status={r.status} /></TableCell>
+                  <TableCell>
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editing ? "Edit Rent Record" : "New Rent Record"}</DialogTitle></DialogHeader>
+          <div className="grid gap-4 mt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
+              <div><Label>Property Type</Label><Input value={formData.propertyType} onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Contact Name</Label><Input value={formData.contactName} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} /></div>
+              <div><Label>Rent Amount ($)</Label><Input type="number" value={formData.rentAmount} onChange={(e) => setFormData({ ...formData, rentAmount: Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Payment Frequency</Label>
+                <Select value={formData.paymentFrequency} onValueChange={(v) => setFormData({ ...formData, paymentFrequency: v as RentRecord["paymentFrequency"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="monthly">Monthly</SelectItem><SelectItem value="quarterly">Quarterly</SelectItem><SelectItem value="yearly">Yearly</SelectItem></SelectContent>
+                </Select>
+              </div>
+              <div><Label>Due Date</Label><Input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Contract Start</Label><Input type="date" value={formData.contractStartDate} onChange={(e) => setFormData({ ...formData, contractStartDate: e.target.value })} /></div>
+              <div><Label>Contract End</Label><Input type="date" value={formData.contractEndDate} onChange={(e) => setFormData({ ...formData, contractEndDate: e.target.value })} /></div>
+            </div>
+            <div><Label>Status</Label>
+              <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Notes</Label><Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} /></div>
+            <Button onClick={handleSave} className="w-full">{editing ? "Save Changes" : "Add Rent Record"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { deleteRentRecord(deleteId!); setDeleteId(null); }} />
+    </div>
+  );
+}
