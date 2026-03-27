@@ -29,6 +29,7 @@ const App = () => (
               <Route path="/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/rent" element={<RentPage />} />
               <Route path="/reminders" element={<RemindersPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

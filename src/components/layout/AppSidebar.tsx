@@ -10,6 +10,7 @@ const navItems = [
   { title: "Subscriptions", url: "/subscriptions", icon: CreditCard },
   { title: "Rent Records", url: "/rent", icon: Building2 },
   { title: "Reminders", url: "/reminders", icon: Bell },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
