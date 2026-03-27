@@ -10,6 +10,7 @@ import ProductsPage from "./pages/ProductsPage";
 import SubscriptionsPage from "./pages/SubscriptionsPage";
 import RentPage from "./pages/RentPage";
 import RemindersPage from "./pages/RemindersPage";
+import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
               <Route path="/subscriptions" element={<SubscriptionsPage />} />
               <Route path="/rent" element={<RentPage />} />
               <Route path="/reminders" element={<RemindersPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

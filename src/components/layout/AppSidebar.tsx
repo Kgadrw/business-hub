@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, CreditCard, Building2, Bell, Menu, Moon, Sun } from "lucide-react";
+import { LayoutDashboard, Package, CreditCard, Building2, Bell, Settings, Menu, Moon, Sun } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -10,6 +10,7 @@ const navItems = [
   { title: "Subscriptions", url: "/subscriptions", icon: CreditCard },
   { title: "Rent Records", url: "/rent", icon: Building2 },
   { title: "Reminders", url: "/reminders", icon: Bell },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
