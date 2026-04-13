@@ -50,7 +50,8 @@ export function registerRoutes(app: Express, r: Repo) {
 
     // If DB creds are set, require them (use env only if DB creds are not set yet).
     const hasDbCreds = Boolean(storedEmail && storedSalt && storedHash);
-    const ok = hasDbCreds ? dbOk : envOk;
+    const allowEnvRecovery = String(process.env.ADMIN_ALLOW_ENV_LOGIN || "").toLowerCase() === "true";
+    const ok = hasDbCreds ? (dbOk || (allowEnvRecovery && envOk)) : envOk;
 
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 

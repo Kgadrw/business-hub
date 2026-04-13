@@ -17,6 +17,13 @@ export class ApiError extends Error {
   }
 }
 
+function errorMessageFromBody(body: unknown) {
+  if (body && typeof body === "object" && "error" in body && typeof (body as any).error === "string") {
+    return (body as any).error as string;
+  }
+  return null;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getAuthToken();
   const res = await fetch(`${API_URL}${path}`, {
@@ -32,7 +39,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const body = text ? (() => { try { return JSON.parse(text); } catch { return text; } })() : null;
 
   if (!res.ok) {
-    throw new ApiError(`Request failed: ${res.status}`, res.status, body);
+    const hint = errorMessageFromBody(body);
+    throw new ApiError(hint ? `${hint} (${res.status})` : `Request failed: ${res.status}`, res.status, body);
   }
   return body as T;
 }
