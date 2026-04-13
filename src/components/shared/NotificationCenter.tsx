@@ -1,6 +1,7 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useStore } from "@/store/useStore";
 import { isUpcoming, isOverdue, formatRelativeDate } from "@/utils/date";
+import { formatDualCurrency, formatUSD } from "@/utils/currency";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { PriorityBadge } from "@/components/shared/PriorityBadge";
 import { Bell, CreditCard, Building2 } from "lucide-react";
@@ -30,14 +31,14 @@ export function NotificationCenter({ open, onOpenChange }: { open: boolean; onOp
           {overdueRent.length > 0 && (
             <Section title="Overdue Rent" icon={<Building2 className="h-4 w-4 text-destructive" />}>
               {overdueRent.map((r) => (
-                <NotifItem key={r.id} title={r.title} subtitle={`$${r.rentAmount.toLocaleString()} due`} date={formatRelativeDate(r.dueDate)} badge={<StatusBadge status="overdue" />} />
+                <NotifItem key={r.id} title={r.title} subtitle={`${formatDualCurrency(r.rentAmount)} due`} date={formatRelativeDate(r.dueDate)} badge={<StatusBadge status="overdue" />} />
               ))}
             </Section>
           )}
           {expiringSubs.length > 0 && (
             <Section title="Expiring Subscriptions" icon={<CreditCard className="h-4 w-4 text-warning" />}>
               {expiringSubs.map((s) => (
-                <NotifItem key={s.id} title={s.name} subtitle={`$${s.amount}/mo • ${s.provider}`} date={formatRelativeDate(s.renewalDate)} badge={<StatusBadge status="due_soon" />} />
+                <NotifItem key={s.id} title={s.name} subtitle={`${formatUSD(s.amount)}/mo • ${s.provider}`} date={formatRelativeDate(s.renewalDate)} badge={<StatusBadge status="due_soon" />} />
               ))}
             </Section>
           )}

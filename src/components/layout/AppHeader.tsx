@@ -18,7 +18,7 @@ export function AppHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b bg-card/80 backdrop-blur-sm px-6">
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-card/80 backdrop-blur-sm px-6">
         <h2 className="text-lg font-semibold text-foreground">Operations Dashboard</h2>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setQuickAddOpen(true)} className="gap-1.5">

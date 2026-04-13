@@ -79,11 +79,3 @@ export interface ActivityLog {
   timestamp: string;
 }
 
-export interface DashboardStats {
-  activeSubscriptions: number;
-  expiringSubscriptions: number;
-  overdueRent: number;
-  upcomingReminders: number;
-  recentProducts: number;
-  monthlyRecurringCost: number;
-}

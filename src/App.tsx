@@ -5,12 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { StoreProvider } from "@/store/useStore";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { RequireAuth } from "@/components/auth/RequireAuth";
 import Dashboard from "./pages/Dashboard";
 import ProductsPage from "./pages/ProductsPage";
 import SubscriptionsPage from "./pages/SubscriptionsPage";
 import RentPage from "./pages/RentPage";
 import RemindersPage from "./pages/RemindersPage";
 import SettingsPage from "./pages/SettingsPage";
+import LoginPage from "./pages/LoginPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,17 +24,21 @@ const App = () => (
       <Sonner />
       <StoreProvider>
         <BrowserRouter>
-          <AppLayout>
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/products" element={<ProductsPage />} />
-              <Route path="/subscriptions" element={<SubscriptionsPage />} />
-              <Route path="/rent" element={<RentPage />} />
-              <Route path="/reminders" element={<RemindersPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
+          <Routes>
+            {/* Public routes (no sidebar/layout) */}
+            <Route path="/login" element={<LoginPage />} />
+
+            {/* App routes (with sidebar/layout) */}
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+              <Route path="/products" element={<RequireAuth><ProductsPage /></RequireAuth>} />
+              <Route path="/subscriptions" element={<RequireAuth><SubscriptionsPage /></RequireAuth>} />
+              <Route path="/rent" element={<RequireAuth><RentPage /></RequireAuth>} />
+              <Route path="/reminders" element={<RequireAuth><RemindersPage /></RequireAuth>} />
+              <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AppLayout>
+            </Route>
+          </Routes>
         </BrowserRouter>
       </StoreProvider>
     </TooltipProvider>

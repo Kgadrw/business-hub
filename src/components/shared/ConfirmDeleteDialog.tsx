@@ -15,9 +15,19 @@ interface ConfirmDeleteDialogProps {
   onConfirm: () => void;
   title?: string;
   description?: string;
+  confirmLabel?: string;
+  isLoading?: boolean;
 }
 
-export function ConfirmDeleteDialog({ open, onOpenChange, onConfirm, title = "Delete record?", description = "This action cannot be undone. This will permanently delete the record." }: ConfirmDeleteDialogProps) {
+export function ConfirmDeleteDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  title = "Delete record?",
+  description = "This action cannot be undone. This will permanently delete the record.",
+  confirmLabel = "Delete",
+  isLoading = false,
+}: ConfirmDeleteDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -26,9 +36,9 @@ export function ConfirmDeleteDialog({ open, onOpenChange, onConfirm, title = "De
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Delete
+          <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+          <AlertDialogAction disabled={isLoading} onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            {isLoading ? `${confirmLabel}...` : confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

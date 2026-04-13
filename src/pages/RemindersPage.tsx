@@ -36,7 +36,7 @@ const priorityOpts = [
 ];
 
 export default function RemindersPage() {
-  const { reminders, addReminder, updateReminder, deleteReminder } = useStore();
+  const { reminders, addReminder, updateReminder, deleteReminder, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -46,6 +46,9 @@ export default function RemindersPage() {
   const [editing, setEditing] = useState<Reminder | null>(null);
   const [formData, setFormData] = useState(defaultReminder);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [completingId, setCompletingId] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     let data = [...reminders];
@@ -70,13 +73,36 @@ export default function RemindersPage() {
 
   const openCreate = () => { setEditing(null); setFormData(defaultReminder); setFormOpen(true); };
   const openEdit = (r: Reminder) => { setEditing(r); setFormData(r); setFormOpen(true); };
-  const handleSave = () => {
-    if (editing) updateReminder(editing.id, formData);
-    else addReminder(formData);
-    setFormOpen(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editing) await updateReminder(editing.id, formData);
+      else await addReminder(formData);
+      setFormOpen(false);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const markComplete = (id: string) => updateReminder(id, { status: "completed" });
+  const markComplete = async (id: string) => {
+    setCompletingId(id);
+    try {
+      await updateReminder(id, { status: "completed" });
+    } finally {
+      setCompletingId(null);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteReminder(deleteId);
+      setDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const SortHeader = ({ field, children }: { field: keyof Reminder; children: React.ReactNode }) => (
     <TableHead className="cursor-pointer select-none" onClick={() => toggleSort(field)}>
@@ -90,6 +116,8 @@ export default function RemindersPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reminders</h1>
           <p className="text-sm text-muted-foreground">{reminders.length} total records</p>
+          {isLoading && <p className="text-xs text-muted-foreground mt-1">Loading…</p>}
+          {!isLoading && error && <p className="text-xs text-destructive mt-1">{error}</p>}
         </div>
         <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Reminder</Button>
       </div>
@@ -99,7 +127,7 @@ export default function RemindersPage() {
       {filtered.length === 0 ? (
         <EmptyState title="No reminders found" icon={<Bell className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Reminder</Button>} />
       ) : (
-        <div className="rounded-lg border overflow-auto">
+        <div className="rounded-3xl border bg-white overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -129,7 +157,14 @@ export default function RemindersPage() {
                   <TableCell>
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       {r.status !== "completed" && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-success" onClick={() => markComplete(r.id)} title="Mark complete">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-success"
+                          onClick={() => void markComplete(r.id)}
+                          title="Mark complete"
+                          disabled={completingId === r.id}
+                        >
                           <CheckCircle2 className="h-3.5 w-3.5" />
                         </Button>
                       )}
@@ -145,9 +180,9 @@ export default function RemindersPage() {
       )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{editing ? "Edit Reminder" : "New Reminder"}</DialogTitle></DialogHeader>
-          <div className="grid gap-4 mt-2">
+          <div className="grid gap-3 mt-1">
             <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Related Type</Label>
@@ -178,12 +213,22 @@ export default function RemindersPage() {
               </div>
             </div>
             <div><Label>Message</Label><Textarea value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} rows={3} /></div>
-            <Button onClick={handleSave} className="w-full">{editing ? "Save Changes" : "Add Reminder"}</Button>
+            <Button onClick={() => void handleSave()} className="w-full" disabled={saving}>
+              {saving ? "Saving..." : (editing ? "Save Changes" : "Add Reminder")}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { deleteReminder(deleteId!); setDeleteId(null); }} />
+      <ConfirmDeleteDialog
+        open={!!deleteId}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteId(null);
+        }}
+        onConfirm={() => void confirmDelete()}
+        isLoading={deleting}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

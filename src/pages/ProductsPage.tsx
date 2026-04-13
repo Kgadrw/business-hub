@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { formatDate } from "@/utils/date";
+import { formatDualCurrency } from "@/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,7 +29,7 @@ const statusOpts = [
 ];
 
 export default function ProductsPage() {
-  const { products, addProduct, updateProduct, deleteProduct } = useStore();
+  const { products, addProduct, updateProduct, deleteProduct, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -38,6 +39,8 @@ export default function ProductsPage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formData, setFormData] = useState(defaultProduct);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     let data = [...products];
@@ -61,10 +64,26 @@ export default function ProductsPage() {
 
   const openCreate = () => { setEditingProduct(null); setFormData(defaultProduct); setFormOpen(true); };
   const openEdit = (p: Product) => { setEditingProduct(p); setFormData(p); setFormOpen(true); };
-  const handleSave = () => {
-    if (editingProduct) updateProduct(editingProduct.id, formData);
-    else addProduct(formData);
-    setFormOpen(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editingProduct) await updateProduct(editingProduct.id, formData);
+      else await addProduct(formData);
+      setFormOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteProduct(deleteId);
+      setDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const SortHeader = ({ field, children }: { field: keyof Product; children: React.ReactNode }) => (
@@ -79,6 +98,8 @@ export default function ProductsPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Products</h1>
           <p className="text-sm text-muted-foreground">{products.length} total records</p>
+          {isLoading && <p className="text-xs text-muted-foreground mt-1">Loading…</p>}
+          {!isLoading && error && <p className="text-xs text-destructive mt-1">{error}</p>}
         </div>
         <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Product</Button>
       </div>
@@ -91,7 +112,7 @@ export default function ProductsPage() {
       {filtered.length === 0 ? (
         <EmptyState title="No products found" description="Add your first product to get started." icon={<Package className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Product</Button>} />
       ) : (
-        <div className="rounded-lg border overflow-auto">
+        <div className="rounded-3xl border bg-white overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -111,7 +132,7 @@ export default function ProductsPage() {
                   <TableCell className="font-medium">{p.name}</TableCell>
                   <TableCell>{p.category}</TableCell>
                   <TableCell>{p.vendor}</TableCell>
-                  <TableCell>${p.purchaseCost.toLocaleString()}</TableCell>
+                  <TableCell>{formatDualCurrency(p.purchaseCost)}</TableCell>
                   <TableCell>{p.assignedTo}</TableCell>
                   <TableCell><StatusBadge status={p.status} /></TableCell>
                   <TableCell>{formatDate(p.warrantyExpiry)}</TableCell>
@@ -130,11 +151,11 @@ export default function ProductsPage() {
 
       {/* Form Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>{editingProduct ? "Edit Product" : "New Product"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 mt-2">
+          <div className="grid gap-3 mt-1">
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Product Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
               <div><Label>Category</Label>
@@ -150,7 +171,7 @@ export default function ProductsPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Purchase Date</Label><Input type="date" value={formData.purchaseDate} onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} /></div>
-              <div><Label>Purchase Cost ($)</Label><Input type="number" value={formData.purchaseCost} onChange={(e) => setFormData({ ...formData, purchaseCost: Number(e.target.value) })} /></div>
+              <div><Label>Purchase Cost (USD)</Label><Input type="number" placeholder="0" value={formData.purchaseCost === 0 ? "" : formData.purchaseCost} onChange={(e) => setFormData({ ...formData, purchaseCost: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Warranty Expiry</Label><Input type="date" value={formData.warrantyExpiry} onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })} /></div>
@@ -163,12 +184,22 @@ export default function ProductsPage() {
               </Select>
             </div>
             <div><Label>Notes</Label><Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} /></div>
-            <Button onClick={handleSave} className="w-full">{editingProduct ? "Save Changes" : "Add Product"}</Button>
+            <Button onClick={() => void handleSave()} className="w-full" disabled={saving}>
+              {saving ? "Saving..." : (editingProduct ? "Save Changes" : "Add Product")}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { deleteProduct(deleteId!); setDeleteId(null); }} />
+      <ConfirmDeleteDialog
+        open={!!deleteId}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteId(null);
+        }}
+        onConfirm={() => void confirmDelete()}
+        isLoading={deleting}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

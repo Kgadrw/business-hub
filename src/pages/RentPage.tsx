@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
 import { formatDate, formatRelativeDate, isOverdue } from "@/utils/date";
+import { formatDualCurrency } from "@/utils/currency";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,7 +18,7 @@ import { Plus, Pencil, Trash2, ArrowUpDown, Building2 } from "lucide-react";
 import type { RentRecord, RecordStatus } from "@/types";
 
 const defaultRent: Omit<RentRecord, "id" | "createdAt"> = {
-  title: "", propertyType: "", contactName: "", rentAmount: 0, paymentFrequency: "monthly",
+  title: "", propertyType: "", contactName: "", payerName: "", payerEmail: "", rentAmount: 0, paymentFrequency: "monthly",
   dueDate: "", contractStartDate: "", contractEndDate: "", status: "active", notes: "",
 };
 
@@ -29,7 +30,7 @@ const statusOpts = [
 ];
 
 export default function RentPage() {
-  const { rentRecords, addRentRecord, updateRentRecord, deleteRentRecord } = useStore();
+  const { rentRecords, addRentRecord, updateRentRecord, deleteRentRecord, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -39,6 +40,8 @@ export default function RentPage() {
   const [editing, setEditing] = useState<RentRecord | null>(null);
   const [formData, setFormData] = useState(defaultRent);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     let data = [...rentRecords];
@@ -62,10 +65,26 @@ export default function RentPage() {
 
   const openCreate = () => { setEditing(null); setFormData(defaultRent); setFormOpen(true); };
   const openEdit = (r: RentRecord) => { setEditing(r); setFormData(r); setFormOpen(true); };
-  const handleSave = () => {
-    if (editing) updateRentRecord(editing.id, formData);
-    else addRentRecord(formData);
-    setFormOpen(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      if (editing) await updateRentRecord(editing.id, formData);
+      else await addRentRecord(formData);
+      setFormOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      await deleteRentRecord(deleteId);
+      setDeleteId(null);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const SortHeader = ({ field, children }: { field: keyof RentRecord; children: React.ReactNode }) => (
@@ -80,6 +99,8 @@ export default function RentPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Rent Records</h1>
           <p className="text-sm text-muted-foreground">{rentRecords.length} total records</p>
+          {isLoading && <p className="text-xs text-muted-foreground mt-1">Loading…</p>}
+          {!isLoading && error && <p className="text-xs text-destructive mt-1">{error}</p>}
         </div>
         <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Rent Record</Button>
       </div>
@@ -89,7 +110,7 @@ export default function RentPage() {
       {filtered.length === 0 ? (
         <EmptyState title="No rent records found" icon={<Building2 className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Rent Record</Button>} />
       ) : (
-        <div className="rounded-lg border overflow-auto">
+        <div className="rounded-3xl border bg-white overflow-auto">
           <Table>
             <TableHeader>
               <TableRow>
@@ -108,7 +129,7 @@ export default function RentPage() {
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.propertyType}</TableCell>
                   <TableCell>{r.contactName}</TableCell>
-                  <TableCell>${r.rentAmount.toLocaleString()}</TableCell>
+                  <TableCell>{formatDualCurrency(r.rentAmount)}</TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span>{formatDate(r.dueDate)}</span>
@@ -130,16 +151,34 @@ export default function RentPage() {
       )}
 
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{editing ? "Edit Rent Record" : "New Rent Record"}</DialogTitle></DialogHeader>
-          <div className="grid gap-4 mt-2">
+          <div className="grid gap-3 mt-1">
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
               <div><Label>Property Type</Label><Input value={formData.propertyType} onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Contact Name</Label><Input value={formData.contactName} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} /></div>
-              <div><Label>Rent Amount ($)</Label><Input type="number" value={formData.rentAmount} onChange={(e) => setFormData({ ...formData, rentAmount: Number(e.target.value) })} /></div>
+              <div><Label>Rent Amount (USD)</Label><Input type="number" placeholder="0" value={formData.rentAmount === 0 ? "" : formData.rentAmount} onChange={(e) => setFormData({ ...formData, rentAmount: e.target.value === "" ? 0 : Number(e.target.value) })} /></div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Payer Name</Label>
+              <Input
+                value={formData.payerName}
+                onChange={(e) => setFormData({ ...formData, payerName: e.target.value })}
+                placeholder="Tenant name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Payer Email</Label>
+              <Input
+                type="email"
+                value={formData.payerEmail}
+                onChange={(e) => setFormData({ ...formData, payerEmail: e.target.value })}
+                placeholder="tenant@example.com"
+              />
+              <p className="text-xs text-muted-foreground">Used for automated payment reminders.</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Payment Frequency</Label>
@@ -161,12 +200,22 @@ export default function RentPage() {
               </Select>
             </div>
             <div><Label>Notes</Label><Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} /></div>
-            <Button onClick={handleSave} className="w-full">{editing ? "Save Changes" : "Add Rent Record"}</Button>
+            <Button onClick={() => void handleSave()} className="w-full" disabled={saving}>
+              {saving ? "Saving..." : (editing ? "Save Changes" : "Add Rent Record")}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <ConfirmDeleteDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)} onConfirm={() => { deleteRentRecord(deleteId!); setDeleteId(null); }} />
+      <ConfirmDeleteDialog
+        open={!!deleteId}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteId(null);
+        }}
+        onConfirm={() => void confirmDelete()}
+        isLoading={deleting}
+        confirmLabel="Delete"
+      />
     </div>
   );
 }

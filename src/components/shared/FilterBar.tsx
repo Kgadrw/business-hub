@@ -18,31 +18,35 @@ export function FilterBar({
   children,
 }: FilterBarProps) {
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-4">
-      <div className="relative flex-1 min-w-[200px] max-w-sm">
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="relative min-w-[200px] max-w-sm flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           value={searchValue}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9"
+          className="pl-9 rounded-full"
         />
       </div>
-      {statusOptions && onStatusFilterChange && (
-        <Select value={statusFilter || "all"} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="w-[160px]">
-            <SlidersHorizontal className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {statusOptions.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-      {children}
+      {(statusOptions && onStatusFilterChange) || children ? (
+        <div className="ml-auto flex items-center gap-3">
+          {statusOptions && onStatusFilterChange && (
+            <Select value={statusFilter || "all"} onValueChange={onStatusFilterChange}>
+              <SelectTrigger className="w-[160px] rounded-full">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          {children}
+        </div>
+      ) : null}
     </div>
   );
 }

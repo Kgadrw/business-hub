@@ -16,7 +16,7 @@ const CHART_COLORS = [
 ];
 
 export default function Dashboard() {
-  const { products, subscriptions, rentRecords, reminders, activityLog } = useStore();
+  const { products, subscriptions, rentRecords, reminders, activityLog, isLoading, error } = useStore();
 
   const activeSubscriptions = subscriptions.filter((s) => s.status === "active");
   const expiringSubs = activeSubscriptions.filter((s) => isExpiringSoon(s.renewalDate, 30));
@@ -43,12 +43,12 @@ export default function Dashboard() {
   const barData = Object.entries(categoryData).map(([name, value]) => ({ name, value }));
 
   const stats = [
-    { label: "Active Subscriptions", value: activeSubscriptions.length, icon: CreditCard, accent: "text-success" },
-    { label: "Expiring (30d)", value: expiringSubs.length, icon: AlertTriangle, accent: expiringSubs.length > 0 ? "text-warning" : "text-muted-foreground" },
-    { label: "Overdue Rent", value: overdueRent.length, icon: Building2, accent: overdueRent.length > 0 ? "text-destructive" : "text-muted-foreground" },
-    { label: "Upcoming Reminders", value: upcomingReminders.length, icon: Bell, accent: upcomingReminders.length > 0 ? "text-primary" : "text-muted-foreground" },
-    { label: "Total Products", value: products.length, icon: Package, accent: "text-info" },
-    { label: "Monthly Recurring", value: `$${Math.round(monthlyRecurring).toLocaleString()}`, icon: DollarSign, accent: "text-primary" },
+    { label: "Active Subscriptions", value: activeSubscriptions.length, icon: CreditCard, accent: "text-success", bg: "bg-emerald-50" },
+    { label: "Expiring (30d)", value: expiringSubs.length, icon: AlertTriangle, accent: expiringSubs.length > 0 ? "text-warning" : "text-muted-foreground", bg: "bg-amber-50" },
+    { label: "Overdue Rent", value: overdueRent.length, icon: Building2, accent: overdueRent.length > 0 ? "text-destructive" : "text-muted-foreground", bg: "bg-rose-50" },
+    { label: "Upcoming Reminders", value: upcomingReminders.length, icon: Bell, accent: upcomingReminders.length > 0 ? "text-primary" : "text-muted-foreground", bg: "bg-orange-50" },
+    { label: "Total Products", value: products.length, icon: Package, accent: "text-info", bg: "bg-sky-50" },
+    { label: "Monthly Recurring", value: `$${Math.round(monthlyRecurring).toLocaleString()}`, icon: DollarSign, accent: "text-primary", bg: "bg-violet-50" },
   ];
 
   return (
@@ -56,12 +56,18 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Overview of your business operations</p>
+        {isLoading && (
+          <p className="text-xs text-muted-foreground mt-1">Loading data from server…</p>
+        )}
+        {!isLoading && error && (
+          <p className="text-xs text-destructive mt-1">{error}</p>
+        )}
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.label} className="animate-fade-in">
+          <Card key={stat.label} className={`animate-fade-in rounded-3xl border-0 shadow-none ${stat.bg}`}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <stat.icon className={`h-5 w-5 ${stat.accent}`} />
@@ -75,7 +81,7 @@ export default function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="rounded-3xl border-0 shadow-none bg-blue-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Spending Breakdown</CardTitle>
           </CardHeader>
@@ -102,7 +108,7 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="rounded-3xl border-0 shadow-none bg-indigo-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Products by Category</CardTitle>
           </CardHeader>
@@ -124,7 +130,7 @@ export default function Dashboard() {
       {/* Bottom Row */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Expiring Subscriptions */}
-        <Card>
+        <Card className="rounded-3xl border-0 shadow-none bg-amber-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-warning" />
@@ -138,7 +144,7 @@ export default function Dashboard() {
               <div key={s.id} className="flex items-center justify-between text-sm">
                 <div>
                   <p className="font-medium text-foreground">{s.name}</p>
-                  <p className="text-xs text-muted-foreground">${s.amount}/mo</p>
+                  <p className="text-xs text-muted-foreground">{s.amount}/mo</p>
                 </div>
                 <span className="text-xs text-warning font-medium">{formatRelativeDate(s.renewalDate)}</span>
               </div>
@@ -147,7 +153,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Upcoming Reminders */}
-        <Card>
+        <Card className="rounded-3xl border-0 shadow-none bg-orange-50">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Bell className="h-4 w-4 text-primary" />
@@ -170,7 +176,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Recent Activity */}
-        <Card>
+        <Card className="rounded-3xl border-0 shadow-none bg-slate-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
