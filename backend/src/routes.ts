@@ -45,13 +45,10 @@ export function registerRoutes(app: Express, r: Repo) {
       verifyPassword(inputPassword, storedSalt, storedHash),
     );
 
-    // Break-glass: env credentials (kept for recovery in dev).
+    // Also allow env credentials (same behavior as local dev when ADMIN_* is set).
     const envOk = Boolean(envEmail && envPassword && inputEmail === envEmail && inputPassword === envPassword);
 
-    // If DB creds are set, require them (use env only if DB creds are not set yet).
-    const hasDbCreds = Boolean(storedEmail && storedSalt && storedHash);
-    const allowEnvRecovery = String(process.env.ADMIN_ALLOW_ENV_LOGIN || "").toLowerCase() === "true";
-    const ok = hasDbCreds ? (dbOk || (allowEnvRecovery && envOk)) : envOk;
+    const ok = dbOk || envOk;
 
     if (!ok) return res.status(401).json({ error: "Invalid credentials" });
 

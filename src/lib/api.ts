@@ -1,11 +1,12 @@
 // In dev, Vite proxies `/api` + `/health` to the backend (see `vite.config.ts`).
-// In prod, set `VITE_API_URL` to your backend origin (e.g. https://api.example.com).
+// In prod, this defaults to the deployed Render API unless `VITE_API_URL` overrides it.
 import { getAuthToken } from "@/lib/auth";
 
-// Default production backend (can be overridden via VITE_API_URL).
-const DEFAULT_API_URL = "https://wegomanage-backend.onrender.com";
+const PROD_DEFAULT_API_URL = "https://wegomanage-backend.onrender.com";
 
-export const API_URL = (import.meta as any).env?.VITE_API_URL ?? DEFAULT_API_URL;
+export const API_URL =
+  (import.meta as any).env?.VITE_API_URL ??
+  ((import.meta as any).env?.DEV ? "" : PROD_DEFAULT_API_URL);
 
 export class ApiError extends Error {
   status: number;
