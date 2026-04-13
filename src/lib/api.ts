@@ -2,7 +2,8 @@
 // In prod, set `VITE_API_URL` to your backend origin (e.g. https://api.example.com).
 import { getAuthToken } from "@/lib/auth";
 
-const DEFAULT_API_URL = "";
+// Default production backend (can be overridden via VITE_API_URL).
+const DEFAULT_API_URL = "https://wegomanage-backend.onrender.com";
 
 export const API_URL = (import.meta as any).env?.VITE_API_URL ?? DEFAULT_API_URL;
 
