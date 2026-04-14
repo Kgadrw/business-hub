@@ -26,8 +26,7 @@ import { clearTokens, getRefreshToken } from "@/lib/auth";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const [companyName, setCompanyName] = useState("Acme Corp");
-  const [email, setEmail] = useState("admin@acme.com");
+  const [companyName, setCompanyName] = useState("");
   const [loginEmail, setLoginEmail] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [reminderAlerts, setReminderAlerts] = useState(true);
@@ -35,7 +34,7 @@ export default function SettingsPage() {
   const [renewalReminder, setRenewalReminder] = useState("7");
   const [usdToFrwRate, setUsdToFrwRateState] = useState(() => String(getUsdToFrwRate()));
   const [saving, setSaving] = useState(false);
-  const [profileName, setProfileName] = useState("Admin User");
+  const [profileName, setProfileName] = useState("");
   const [profileRole, setProfileRole] = useState("Owner");
   const [profileAvatarUrl, setProfileAvatarUrl] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
@@ -50,7 +49,7 @@ export default function SettingsPage() {
   const profile = {
     name: profileName,
     role: profileRole,
-    email,
+    email: loginEmail,
     company: companyName,
     avatarUrl: profileAvatarUrl,
   };
@@ -76,22 +75,21 @@ export default function SettingsPage() {
       }
 
       try {
-        const p = await api.get<{ name: string; role: string; email: string; company: string; avatarUrl: string }>("/api/profile");
+        const me = await api.get<{ id: string; email: string }>("/api/me");
+        if (mounted && typeof me?.email === "string") setLoginEmail(me.email);
+      } catch {
+        // ignore
+      }
+
+      try {
+        const p = await api.get<{ name: string; role: string; company: string; avatarUrl: string }>("/api/profile");
         if (!mounted) return;
         if (p?.name) setProfileName(p.name);
         if (typeof p?.role === "string") setProfileRole(p.role);
         if (typeof p?.avatarUrl === "string") setProfileAvatarUrl(p.avatarUrl);
-        if (p?.email) setEmail(p.email);
         if (p?.company) setCompanyName(p.company);
       } catch {
         // Profile is optional; keep local defaults.
-      }
-
-      try {
-        const c = await api.get<{ email: string }>("/api/admin/credentials");
-        if (mounted && typeof c?.email === "string") setLoginEmail(c.email);
-      } catch {
-        // Optional; keep blank if not available.
       }
     })();
     return () => {
@@ -102,7 +100,6 @@ export default function SettingsPage() {
   const handleSaveProfile = async () => {
     const trimmedName = profileName.trim();
     const trimmedCompany = companyName.trim();
-    const trimmedEmail = email.trim();
     if (!trimmedName) {
       toast.error("Please enter a name");
       return;
@@ -111,16 +108,11 @@ export default function SettingsPage() {
       toast.error("Please enter a company name");
       return;
     }
-    if (!trimmedEmail) {
-      toast.error("Please enter an email");
-      return;
-    }
     setProfileSaving(true);
     try {
       await api.put("/api/profile", {
         name: trimmedName,
         role: profileRole.trim(),
-        email: trimmedEmail,
         company: trimmedCompany,
         avatarUrl: profileAvatarUrl.trim(),
       });
@@ -150,7 +142,7 @@ export default function SettingsPage() {
   };
 
   const handleUpdateCredentials = async () => {
-    const nextEmail = (newLoginEmail || loginEmail || email).trim();
+    const nextEmail = (newLoginEmail || loginEmail).trim();
     if (!currentPassword.trim()) {
       toast.error("Enter your current password");
       return;
@@ -361,8 +353,9 @@ export default function SettingsPage() {
               <Input id="profile-role" value={profileRole} onChange={(e) => setProfileRole(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="profile-email">Email</Label>
-              <Input id="profile-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="profile-email">Login email</Label>
+              <Input id="profile-email" type="email" value={loginEmail} readOnly />
+              <p className="text-xs text-muted-foreground">Change this under “Change login credentials”.</p>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="profile-company">Company</Label>
@@ -409,7 +402,7 @@ export default function SettingsPage() {
                 id="new-login-email"
                 type="email"
                 autoComplete="email"
-                placeholder={loginEmail || email}
+                placeholder={loginEmail || "you@example.com"}
                 value={newLoginEmail}
                 onChange={(e) => setNewLoginEmail(e.target.value)}
               />
