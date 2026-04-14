@@ -16,6 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, ArrowUpDown, Building2 } from "lucide-react";
 import type { RentRecord, RecordStatus } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileFormSteps } from "@/components/shared/MobileFormSteps";
+import { cn } from "@/lib/utils";
 
 const defaultRent: Omit<RentRecord, "id" | "createdAt"> = {
   title: "", propertyType: "", contactName: "", payerName: "", payerEmail: "", rentAmount: 0, paymentFrequency: "monthly",
@@ -32,6 +35,7 @@ const statusOpts = [
 export default function RentPage() {
   const { rentRecords, addRentRecord, updateRentRecord, deleteRentRecord, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<keyof RentRecord>("dueDate");
@@ -153,7 +157,107 @@ export default function RentPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{editing ? "Edit Rent Record" : "New Rent Record"}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 mt-1">
+          {isMobile ? (
+            <MobileFormSteps
+              primaryLabel={editing ? "Save Changes" : "Add Rent Record"}
+              onPrimary={() => void handleSave()}
+              primaryDisabled={saving}
+              isLoading={saving}
+              onClose={() => setFormOpen(false)}
+              steps={[
+                {
+                  key: "property",
+                  title: "Property",
+                  canContinue: () => !!formData.title.trim(),
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Title</Label>
+                        <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Property Type</Label>
+                        <Input value={formData.propertyType} onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Contact Name</Label>
+                        <Input value={formData.contactName} onChange={(e) => setFormData({ ...formData, contactName: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "payment",
+                  title: "Payment",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Rent Amount (USD)</Label>
+                        <Input type="number" placeholder="0" value={formData.rentAmount === 0 ? "" : formData.rentAmount} onChange={(e) => setFormData({ ...formData, rentAmount: e.target.value === "" ? 0 : Number(e.target.value) })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Payment Frequency</Label>
+                        <Select value={formData.paymentFrequency} onValueChange={(v) => setFormData({ ...formData, paymentFrequency: v as RentRecord["paymentFrequency"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent><SelectItem value="monthly">Monthly</SelectItem><SelectItem value="quarterly">Quarterly</SelectItem><SelectItem value="yearly">Yearly</SelectItem></SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Due Date</Label>
+                        <Input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "payer",
+                  title: "Payer",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Payer Name</Label>
+                        <Input value={formData.payerName} onChange={(e) => setFormData({ ...formData, payerName: e.target.value })} placeholder="Tenant name" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Payer Email</Label>
+                        <Input type="email" value={formData.payerEmail} onChange={(e) => setFormData({ ...formData, payerEmail: e.target.value })} placeholder="tenant@example.com" />
+                        <p className="text-xs text-muted-foreground">Used for automated payment reminders.</p>
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "finish",
+                  title: "Finish",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Contract Start</Label>
+                        <Input type="date" value={formData.contractStartDate} onChange={(e) => setFormData({ ...formData, contractStartDate: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Contract End</Label>
+                        <Input type="date" value={formData.contractEndDate} onChange={(e) => setFormData({ ...formData, contractEndDate: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Status</Label>
+                        <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Notes</Label>
+                        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
+                      </div>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          ) : null}
+
+          <div className={cn("grid gap-3 mt-1", isMobile && "hidden")}>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
               <div><Label>Property Type</Label><Input value={formData.propertyType} onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })} /></div>

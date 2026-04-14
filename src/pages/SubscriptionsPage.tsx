@@ -16,6 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, ArrowUpDown, CreditCard } from "lucide-react";
 import type { Subscription, RecordStatus } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileFormSteps } from "@/components/shared/MobileFormSteps";
+import { cn } from "@/lib/utils";
 
 const defaultSub: Omit<Subscription, "id" | "createdAt"> = {
   name: "", provider: "", planType: "", amount: 0, billingCycle: "monthly",
@@ -32,6 +35,7 @@ const statusOpts = [
 export default function SubscriptionsPage() {
   const { subscriptions, addSubscription, updateSubscription, deleteSubscription, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<keyof Subscription>("renewalDate");
@@ -153,7 +157,111 @@ export default function SubscriptionsPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{editing ? "Edit Subscription" : "New Subscription"}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 mt-1">
+          {isMobile ? (
+            <MobileFormSteps
+              primaryLabel={editing ? "Save Changes" : "Add Subscription"}
+              onPrimary={() => void handleSave()}
+              primaryDisabled={saving}
+              isLoading={saving}
+              onClose={() => setFormOpen(false)}
+              steps={[
+                {
+                  key: "basic",
+                  title: "Basic details",
+                  canContinue: () => !!formData.name.trim(),
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Name</Label>
+                        <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Provider</Label>
+                        <Input value={formData.provider} onChange={(e) => setFormData({ ...formData, provider: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Plan Type</Label>
+                        <Input value={formData.planType} onChange={(e) => setFormData({ ...formData, planType: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "billing",
+                  title: "Billing",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Amount (USD)</Label>
+                        <Input type="number" placeholder="0" value={formData.amount === 0 ? "" : formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value === "" ? 0 : Number(e.target.value) })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Billing Cycle</Label>
+                        <Select value={formData.billingCycle} onValueChange={(v) => setFormData({ ...formData, billingCycle: v as Subscription["billingCycle"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent><SelectItem value="monthly">Monthly</SelectItem><SelectItem value="quarterly">Quarterly</SelectItem><SelectItem value="yearly">Yearly</SelectItem></SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Start Date</Label>
+                        <Input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Renewal Date</Label>
+                        <Input type="date" value={formData.renewalDate} onChange={(e) => setFormData({ ...formData, renewalDate: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "payer",
+                  title: "Payer info",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Payer Name</Label>
+                        <Input value={formData.payerName} onChange={(e) => setFormData({ ...formData, payerName: e.target.value })} placeholder="Client name" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Payer Email</Label>
+                        <Input type="email" value={formData.payerEmail} onChange={(e) => setFormData({ ...formData, payerEmail: e.target.value })} placeholder="client@example.com" />
+                        <p className="text-xs text-muted-foreground">Used for automated payment reminders.</p>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Payment Method</Label>
+                        <Input value={formData.paymentMethod} onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Remind (days before)</Label>
+                        <Input type="number" placeholder="0" value={formData.reminderDaysBefore === 0 ? "" : formData.reminderDaysBefore} onChange={(e) => setFormData({ ...formData, reminderDaysBefore: e.target.value === "" ? 0 : Number(e.target.value) })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "finish",
+                  title: "Finish",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Status</Label>
+                        <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Notes</Label>
+                        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
+                      </div>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          ) : null}
+
+          <div className={cn("grid gap-3 mt-1", isMobile && "hidden")}>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
               <div><Label>Provider</Label><Input value={formData.provider} onChange={(e) => setFormData({ ...formData, provider: e.target.value })} /></div>

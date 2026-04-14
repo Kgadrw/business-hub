@@ -16,6 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, ArrowUpDown, Package } from "lucide-react";
 import type { Product, RecordStatus } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileFormSteps } from "@/components/shared/MobileFormSteps";
+import { cn } from "@/lib/utils";
 
 const defaultProduct: Omit<Product, "id" | "createdAt"> = {
   name: "", category: "", vendor: "", purchaseDate: "", purchaseCost: 0,
@@ -31,6 +34,7 @@ const statusOpts = [
 export default function ProductsPage() {
   const { products, addProduct, updateProduct, deleteProduct, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<keyof Product>("name");
@@ -155,7 +159,95 @@ export default function ProductsPage() {
           <DialogHeader>
             <DialogTitle>{editingProduct ? "Edit Product" : "New Product"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 mt-1">
+          {isMobile ? (
+            <MobileFormSteps
+              primaryLabel={editingProduct ? "Save Changes" : "Add Product"}
+              onPrimary={() => void handleSave()}
+              primaryDisabled={saving}
+              isLoading={saving}
+              onClose={() => setFormOpen(false)}
+              steps={[
+                {
+                  key: "basic",
+                  title: "Basic details",
+                  canContinue: () => !!formData.name.trim(),
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Product Name</Label>
+                        <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Category</Label>
+                        <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                          <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>{categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Vendor</Label>
+                        <Input value={formData.vendor} onChange={(e) => setFormData({ ...formData, vendor: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Serial Number</Label>
+                        <Input value={formData.serialNumber} onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "purchase",
+                  title: "Purchase info",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Purchase Date</Label>
+                        <Input type="date" value={formData.purchaseDate} onChange={(e) => setFormData({ ...formData, purchaseDate: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Purchase Cost (USD)</Label>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          value={formData.purchaseCost === 0 ? "" : formData.purchaseCost}
+                          onChange={(e) => setFormData({ ...formData, purchaseCost: e.target.value === "" ? 0 : Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Warranty Expiry</Label>
+                        <Input type="date" value={formData.warrantyExpiry} onChange={(e) => setFormData({ ...formData, warrantyExpiry: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "finish",
+                  title: "Finish",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Assigned To</Label>
+                        <Input value={formData.assignedTo} onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Status</Label>
+                        <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Notes</Label>
+                        <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={3} />
+                      </div>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          ) : null}
+
+          <div className={cn("grid gap-3 mt-1", isMobile && "hidden")}>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Product Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
               <div><Label>Category</Label>

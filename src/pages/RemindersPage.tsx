@@ -16,6 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Pencil, Trash2, ArrowUpDown, Bell, CheckCircle2 } from "lucide-react";
 import type { Reminder, RecordStatus } from "@/types";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileFormSteps } from "@/components/shared/MobileFormSteps";
+import { cn } from "@/lib/utils";
 
 const defaultReminder: Omit<Reminder, "id" | "createdAt"> = {
   title: "", relatedType: "general", relatedId: null, reminderDate: "",
@@ -38,6 +41,7 @@ const priorityOpts = [
 export default function RemindersPage() {
   const { reminders, addReminder, updateReminder, deleteReminder, isLoading, error } = useStore();
   const [searchParams] = useSearchParams();
+  const isMobile = useIsMobile();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortField, setSortField] = useState<keyof Reminder>("reminderDate");
@@ -182,7 +186,74 @@ export default function RemindersPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader><DialogTitle>{editing ? "Edit Reminder" : "New Reminder"}</DialogTitle></DialogHeader>
-          <div className="grid gap-3 mt-1">
+          {isMobile ? (
+            <MobileFormSteps
+              primaryLabel={editing ? "Save Changes" : "Add Reminder"}
+              onPrimary={() => void handleSave()}
+              primaryDisabled={saving}
+              isLoading={saving}
+              onClose={() => setFormOpen(false)}
+              steps={[
+                {
+                  key: "basic",
+                  title: "Basic",
+                  canContinue: () => !!formData.title.trim(),
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Title</Label>
+                        <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Related Type</Label>
+                        <Select value={formData.relatedType} onValueChange={(v) => setFormData({ ...formData, relatedType: v as Reminder["relatedType"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="general">General</SelectItem>
+                            <SelectItem value="product">Product</SelectItem>
+                            <SelectItem value="subscription">Subscription</SelectItem>
+                            <SelectItem value="rent">Rent</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Reminder Date</Label>
+                        <Input type="date" value={formData.reminderDate} onChange={(e) => setFormData({ ...formData, reminderDate: e.target.value })} />
+                      </div>
+                    </>
+                  ),
+                },
+                {
+                  key: "details",
+                  title: "Details",
+                  content: (
+                    <>
+                      <div className="grid gap-2">
+                        <Label>Priority</Label>
+                        <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v as Reminder["priority"] })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{priorityOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Status</Label>
+                        <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v as RecordStatus })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>{statusOpts.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Message</Label>
+                        <Textarea value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} rows={4} />
+                      </div>
+                    </>
+                  ),
+                },
+              ]}
+            />
+          ) : null}
+
+          <div className={cn("grid gap-3 mt-1", isMobile && "hidden")}>
             <div><Label>Title</Label><Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Related Type</Label>
