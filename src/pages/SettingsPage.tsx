@@ -214,10 +214,6 @@ export default function SettingsPage() {
                 <Input id="company" value={companyName} onChange={(e) => setCompanyName(e.target.value)} />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Contact Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-              <div className="grid gap-2">
                 <Label htmlFor="usd-to-frw">USD to FRW Rate</Label>
                 <Input
                   id="usd-to-frw"
@@ -308,10 +304,6 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Company</span>
                   <span className="font-medium truncate">{profile.company}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-muted-foreground">Email</span>
-                  <span className="font-medium truncate">{profile.email}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-muted-foreground">Login</span>
