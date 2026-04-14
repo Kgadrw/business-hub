@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import type { Product, Subscription, RentRecord, Reminder, ActivityLog } from "@/types";
 import { api, ApiError } from "@/lib/api";
 import { setUsdToFrwRate } from "@/utils/currency";
-import { clearAuthToken } from "@/lib/auth";
+import { clearTokens } from "@/lib/auth";
 
 interface StoreContextType {
   products: Product[];
@@ -60,7 +60,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
-        clearAuthToken();
+        clearTokens();
         setError("Unauthorized. Please log in again.");
       } else {
         setError(e instanceof Error ? e.message : "Failed to load data from server");

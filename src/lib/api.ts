@@ -1,6 +1,6 @@
 // In dev, Vite proxies `/api` + `/health` to the backend (see `vite.config.ts`).
 // In prod, this defaults to the deployed Render API unless `VITE_API_URL` overrides it.
-import { getAuthToken } from "@/lib/auth";
+import { clearTokens, getAccessToken, getRefreshToken, setTokens } from "@/lib/auth";
 
 const PROD_DEFAULT_API_URL = "https://wegomanage-backend.onrender.com";
 
@@ -26,18 +26,52 @@ function errorMessageFromBody(body: unknown) {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = getAuthToken();
-  const res = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init?.headers || {}),
-    },
-  });
+  const doFetch = async (withRefreshedToken: boolean) => {
+    const token = getAccessToken();
+    return await fetch(`${API_URL}${path}`, {
+      ...init,
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(init?.headers || {}),
+      },
+    });
+  };
+
+  let res = await doFetch(false);
 
   const text = await res.text();
   const body = text ? (() => { try { return JSON.parse(text); } catch { return text; } })() : null;
+
+  // Auto-refresh once on 401 (except for auth endpoints).
+  if (!res.ok && res.status === 401 && !path.startsWith("/api/auth/")) {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      try {
+        const refreshRes = await fetch(`${API_URL}/api/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        });
+        const refreshText = await refreshRes.text();
+        const refreshBody = refreshText ? (() => { try { return JSON.parse(refreshText); } catch { return refreshText; } })() : null;
+        if (refreshRes.ok && refreshBody && typeof refreshBody === "object" && "accessToken" in refreshBody) {
+          setTokens({ accessToken: (refreshBody as any).accessToken, refreshToken });
+          res = await doFetch(true);
+          const text2 = await res.text();
+          const body2 = text2 ? (() => { try { return JSON.parse(text2); } catch { return text2; } })() : null;
+          if (!res.ok) {
+            const hint = errorMessageFromBody(body2);
+            throw new ApiError(hint ? `${hint} (${res.status})` : `Request failed: ${res.status}`, res.status, body2);
+          }
+          return body2 as T;
+        }
+      } catch {
+        // fall through to original 401
+      }
+    }
+    clearTokens();
+  }
 
   if (!res.ok) {
     const hint = errorMessageFromBody(body);

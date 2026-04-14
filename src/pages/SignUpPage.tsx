@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -9,12 +9,9 @@ import { api } from "@/lib/api";
 import { setTokens } from "@/lib/auth";
 import { useStore } from "@/store/useStore";
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const from = (location.state as any)?.from || "/";
   const { refresh } = useStore();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,13 +20,13 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await api.post<{ accessToken: string; refreshToken: string }>("/api/auth/login", { email, password });
+      const res = await api.post<{ accessToken: string; refreshToken: string }>("/api/auth/register", { email, password });
       setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
       await refresh();
-      toast.success("Welcome back");
-      navigate(from, { replace: true });
+      toast.success("Account created");
+      navigate("/", { replace: true });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Login failed");
+      toast.error(err instanceof Error ? err.message : "Sign up failed");
     } finally {
       setLoading(false);
     }
@@ -39,36 +36,22 @@ export default function LoginPage() {
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Sign in</CardTitle>
-          <CardDescription>Login to access your dashboard</CardDescription>
+          <CardTitle>Create account</CardTitle>
+          <CardDescription>Sign up to start using WegoConnect</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={onSubmit} className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="login-email">Email</Label>
-              <Input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@acme.com"
-                required
-              />
+              <Label htmlFor="signup-email">Email</Label>
+              <Input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="login-password">Password</Label>
-              <Input
-                id="login-password"
-                type="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <Label htmlFor="signup-password">Password</Label>
+              <Input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <p className="text-xs text-muted-foreground">Minimum 6 characters.</p>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign in"}
+              {loading ? "Creating..." : "Create account"}
             </Button>
           </form>
         </CardContent>

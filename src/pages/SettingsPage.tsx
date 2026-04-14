@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
-import { clearAuthToken, getAuthToken } from "@/lib/auth";
+import { clearTokens, getRefreshToken } from "@/lib/auth";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -134,12 +134,11 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = () => {
-    // No auth/session yet — treat sign-out as clearing local user preferences.
-    const token = getAuthToken();
-    if (token) {
-      void api.post("/api/auth/logout", { token }).catch(() => {});
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      void api.post("/api/auth/logout", { refreshToken }).catch(() => {});
     }
-    clearAuthToken();
+    clearTokens();
     try {
       window.localStorage.removeItem("usd_to_frw_rate");
     } catch {
@@ -166,7 +165,7 @@ export default function SettingsPage() {
     }
     setCredsSaving(true);
     try {
-      await api.put("/api/admin/credentials", {
+      await api.put("/api/me/credentials", {
         currentPassword: currentPassword.trim(),
         newEmail: nextEmail,
         newPassword: newLoginPassword.trim(),
