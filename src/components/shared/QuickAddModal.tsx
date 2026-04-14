@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Package, CreditCard, Building2, Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
 const quickActions = [
   { label: "New Product", icon: Package, path: "/products", color: "text-info" },
@@ -24,11 +25,11 @@ export function QuickAddModal({ open, onOpenChange }: { open: boolean; onOpenCha
             <Button
               key={action.label}
               variant="outline"
-              className="h-auto flex-col gap-2 py-6"
+              className="h-auto flex-col gap-2 py-4 sm:py-6"
               onClick={() => { onOpenChange(false); navigate(action.path + "?new=true"); }}
             >
-              <action.icon className={`h-6 w-6 ${action.color}`} />
-              <span className="text-sm">{action.label}</span>
+              <action.icon className={cn("h-5 w-5 sm:h-6 sm:w-6", action.color)} />
+              <span className="text-sm sm:text-sm">{action.label}</span>
             </Button>
           ))}
         </div>
