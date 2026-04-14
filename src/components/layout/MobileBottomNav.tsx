@@ -24,12 +24,13 @@ export function MobileBottomNav() {
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-0 z-40 border-t bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70",
+        "fixed inset-x-0 bottom-3 z-40",
         "pb-[env(safe-area-inset-bottom)]",
       )}
       aria-label="Bottom navigation"
     >
-      <div className="mx-auto grid max-w-md grid-cols-6 px-2 py-2">
+      <div className="mx-auto max-w-md px-3">
+        <div className="grid grid-cols-6 rounded-3xl border bg-background/90 px-2 py-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/70">
         {items.map((item) => (
           <NavLink
             key={item.url}
@@ -49,6 +50,7 @@ export function MobileBottomNav() {
             <span className="leading-none">{item.title}</span>
           </NavLink>
         ))}
+        </div>
       </div>
     </nav>
   );
