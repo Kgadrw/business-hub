@@ -20,7 +20,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       </div>
 
       <div className={cn("transition-all duration-300", "ml-0", collapsed ? "md:ml-24" : "md:ml-64")}>
-        <main className="p-4 pt-20 pb-28 md:p-6 md:pb-6 md:pt-6">{content}</main>
+        <main className="p-4 pt-20 pb-32 md:p-6 md:pb-6 md:pt-6">{content}</main>
       </div>
 
       <div className="md:hidden">

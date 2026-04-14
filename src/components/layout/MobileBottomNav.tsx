@@ -24,7 +24,7 @@ export function MobileBottomNav() {
   return (
     <nav
       className={cn(
-        "fixed inset-x-0 bottom-3 z-40",
+        "fixed inset-x-0 bottom-6 z-40",
         "pb-[env(safe-area-inset-bottom)]",
       )}
       aria-label="Bottom navigation"
