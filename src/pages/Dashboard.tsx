@@ -54,8 +54,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Overview of your business operations</p>
+        <h1 className="hidden md:block text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="hidden md:block text-sm text-muted-foreground">Overview of your business operations</p>
         {isLoading && (
           <p className="text-xs text-muted-foreground mt-1">Loading data from server…</p>
         )}
