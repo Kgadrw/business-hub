@@ -119,11 +119,11 @@ export default function RentPage() {
             <TableHeader>
               <TableRow>
                 <SortHeader field="title">Title</SortHeader>
-                <TableHead>Type</TableHead>
+                <SortHeader field="propertyType">Type</SortHeader>
                 <SortHeader field="contactName">Contact</SortHeader>
                 <SortHeader field="rentAmount">Amount</SortHeader>
                 <SortHeader field="dueDate">Due Date</SortHeader>
-                <TableHead>Status</TableHead>
+                <SortHeader field="status">Status</SortHeader>
                 <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>

@@ -136,11 +136,11 @@ export default function RemindersPage() {
             <TableHeader>
               <TableRow>
                 <SortHeader field="title">Title</SortHeader>
-                <TableHead>Type</TableHead>
+                <SortHeader field="relatedType">Type</SortHeader>
                 <SortHeader field="reminderDate">Date</SortHeader>
-                <TableHead>Priority</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Message</TableHead>
+                <SortHeader field="priority">Priority</SortHeader>
+                <SortHeader field="status">Status</SortHeader>
+                <SortHeader field="message">Message</SortHeader>
                 <TableHead className="w-[100px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
