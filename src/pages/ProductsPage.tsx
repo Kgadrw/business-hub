@@ -141,7 +141,7 @@ export default function ProductsPage() {
                   <TableCell><StatusBadge status={p.status} /></TableCell>
                   <TableCell>{formatDate(p.warrantyExpiry)}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(p.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
