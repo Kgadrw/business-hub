@@ -31,6 +31,14 @@ const statusOpts = [
   { value: "completed", label: "Completed" },
   { value: "inactive", label: "Inactive" },
 ];
+const sortOpts: { value: keyof RentRecord; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "propertyType", label: "Type" },
+  { value: "contactName", label: "Contact" },
+  { value: "rentAmount", label: "Amount" },
+  { value: "dueDate", label: "Due Date" },
+  { value: "status", label: "Status" },
+];
 
 export default function RentPage() {
   const { rentRecords, addRentRecord, updateRentRecord, deleteRentRecord, isLoading, error } = useStore();
@@ -109,7 +117,29 @@ export default function RentPage() {
         <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Rent Record</Button>
       </div>
 
-      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search rent records..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts} />
+      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search rent records..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts}>
+        <Select value={sortField} onValueChange={(v) => setSortField(v as keyof RentRecord)}>
+          <SelectTrigger className="w-[170px] rounded-full">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortOpts.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortDir} onValueChange={(v) => setSortDir(v as "asc" | "desc")}>
+          <SelectTrigger className="w-[140px] rounded-full">
+            <SelectValue placeholder="Direction" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="asc">Ascending</SelectItem>
+            <SelectItem value="desc">Descending</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
       {filtered.length === 0 ? (
         <EmptyState title="No rent records found" icon={<Building2 className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Rent Record</Button>} />

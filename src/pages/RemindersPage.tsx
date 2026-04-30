@@ -37,6 +37,14 @@ const priorityOpts = [
   { value: "high", label: "High" },
   { value: "urgent", label: "Urgent" },
 ];
+const sortOpts: { value: keyof Reminder; label: string }[] = [
+  { value: "title", label: "Title" },
+  { value: "relatedType", label: "Type" },
+  { value: "reminderDate", label: "Date" },
+  { value: "priority", label: "Priority" },
+  { value: "status", label: "Status" },
+  { value: "message", label: "Message" },
+];
 
 export default function RemindersPage() {
   const { reminders, addReminder, updateReminder, deleteReminder, isLoading, error } = useStore();
@@ -126,7 +134,29 @@ export default function RemindersPage() {
         <Button onClick={openCreate} className="gap-1.5"><Plus className="h-4 w-4" />Add Reminder</Button>
       </div>
 
-      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search reminders..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts} />
+      <FilterBar searchValue={search} onSearchChange={setSearch} searchPlaceholder="Search reminders..." statusFilter={statusFilter} onStatusFilterChange={setStatusFilter} statusOptions={statusOpts}>
+        <Select value={sortField} onValueChange={(v) => setSortField(v as keyof Reminder)}>
+          <SelectTrigger className="w-[170px] rounded-full">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            {sortOpts.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortDir} onValueChange={(v) => setSortDir(v as "asc" | "desc")}>
+          <SelectTrigger className="w-[140px] rounded-full">
+            <SelectValue placeholder="Direction" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="asc">Ascending</SelectItem>
+            <SelectItem value="desc">Descending</SelectItem>
+          </SelectContent>
+        </Select>
+      </FilterBar>
 
       {filtered.length === 0 ? (
         <EmptyState title="No reminders found" icon={<Bell className="h-8 w-8 text-muted-foreground" />} action={<Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" />Add Reminder</Button>} />
