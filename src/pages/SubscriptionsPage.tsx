@@ -129,7 +129,7 @@ export default function SubscriptionsPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((s) => (
-                <TableRow key={s.id} className="group">
+                <TableRow key={s.id}>
                   <TableCell className="font-medium">{s.name}</TableCell>
                   <TableCell>{s.provider}</TableCell>
                   <TableCell>{formatDualCurrency(s.amount)}</TableCell>
@@ -142,7 +142,7 @@ export default function SubscriptionsPage() {
                   </TableCell>
                   <TableCell><StatusBadge status={s.status} /></TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-100">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>

@@ -176,7 +176,7 @@ export default function RemindersPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((r) => (
-                <TableRow key={r.id} className="group">
+                <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell className="capitalize">{r.relatedType}</TableCell>
                   <TableCell>
@@ -189,7 +189,7 @@ export default function RemindersPage() {
                   <TableCell><StatusBadge status={r.status} /></TableCell>
                   <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">{r.message}</TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-100">
                       {r.status !== "completed" && (
                         <Button
                           variant="ghost"

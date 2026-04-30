@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { clearTokens } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
 
 function initialsFromName(name: string) {
   const parts = name
@@ -20,6 +24,7 @@ export function MobileTopBar() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     let mounted = true;
@@ -65,6 +70,17 @@ export function MobileTopBar() {
             <p className="text-sm font-semibold truncate leading-5">{displayName}</p>
           </div>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            clearTokens();
+            navigate("/login", { replace: true });
+          }}
+          aria-label="Log out"
+        >
+          <LogOut className="h-5 w-5" />
+        </Button>
       </div>
       <div className="h-px bg-border" />
     </header>

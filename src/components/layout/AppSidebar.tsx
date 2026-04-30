@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useStore } from "@/store/useStore";
 import { isUpcoming, isOverdue } from "@/utils/date";
 import { NotificationCenter } from "@/components/shared/NotificationCenter";
+import { clearTokens } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
 
 const navItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -18,6 +20,7 @@ const navItems = [
 export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { reminders, subscriptions, rentRecords } = useStore();
   const [notifOpen, setNotifOpen] = useState(false);
+  const navigate = useNavigate();
 
   const alertCount =
     reminders.filter((r) => r.status === "pending" && isUpcoming(r.reminderDate, 7)).length +
@@ -76,7 +79,8 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
         </button>
         <button
           onClick={() => {
-            window.location.href = "/";
+            clearTokens();
+            navigate("/login", { replace: true });
           }}
           className={cn(
             "flex items-center gap-3 rounded-full px-3 py-2.5 text-sm text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full",

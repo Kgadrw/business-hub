@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useNavigate } from "react-router-dom";
 import { clearTokens, getRefreshToken } from "@/lib/auth";
+import { LoadingState } from "@/components/shared/LoadingState";
 
 export default function SettingsPage() {
   const navigate = useNavigate();
@@ -45,6 +46,7 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newLoginEmail, setNewLoginEmail] = useState("");
   const [newLoginPassword, setNewLoginPassword] = useState("");
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
 
   const profile = {
     name: profileName,
@@ -64,38 +66,46 @@ export default function SettingsPage() {
     let mounted = true;
     (async () => {
       try {
-        const cfg = await api.get<{ usdToFrwRate?: number }>("/api/config");
-        const rate = cfg?.usdToFrwRate;
-        if (mounted && typeof rate === "number" && Number.isFinite(rate) && rate > 0) {
-          setUsdToFrwRate(rate);
-          setUsdToFrwRateState(String(rate));
+        try {
+          const cfg = await api.get<{ usdToFrwRate?: number }>("/api/config");
+          const rate = cfg?.usdToFrwRate;
+          if (mounted && typeof rate === "number" && Number.isFinite(rate) && rate > 0) {
+            setUsdToFrwRate(rate);
+            setUsdToFrwRateState(String(rate));
+          }
+        } catch {
+          // Keep local cached rate if server isn't reachable.
         }
-      } catch {
-        // Keep local cached rate if server isn't reachable.
-      }
 
-      try {
-        const me = await api.get<{ id: string; email: string }>("/api/me");
-        if (mounted && typeof me?.email === "string") setLoginEmail(me.email);
-      } catch {
-        // ignore
-      }
+        try {
+          const me = await api.get<{ id: string; email: string }>("/api/me");
+          if (mounted && typeof me?.email === "string") setLoginEmail(me.email);
+        } catch {
+          // ignore
+        }
 
-      try {
-        const p = await api.get<{ name: string; role: string; company: string; avatarUrl: string }>("/api/profile");
-        if (!mounted) return;
-        if (p?.name) setProfileName(p.name);
-        if (typeof p?.role === "string") setProfileRole(p.role);
-        if (typeof p?.avatarUrl === "string") setProfileAvatarUrl(p.avatarUrl);
-        if (p?.company) setCompanyName(p.company);
-      } catch {
-        // Profile is optional; keep local defaults.
+        try {
+          const p = await api.get<{ name: string; role: string; company: string; avatarUrl: string }>("/api/profile");
+          if (!mounted) return;
+          if (p?.name) setProfileName(p.name);
+          if (typeof p?.role === "string") setProfileRole(p.role);
+          if (typeof p?.avatarUrl === "string") setProfileAvatarUrl(p.avatarUrl);
+          if (p?.company) setCompanyName(p.company);
+        } catch {
+          // Profile is optional; keep local defaults.
+        }
+      } finally {
+        if (mounted) setIsInitialLoading(false);
       }
     })();
     return () => {
       mounted = false;
     };
   }, []);
+
+  if (isInitialLoading) {
+    return <LoadingState message="Loading settings..." />;
+  }
 
   const handleSaveProfile = async () => {
     const trimmedName = profileName.trim();

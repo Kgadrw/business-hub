@@ -159,7 +159,7 @@ export default function RentPage() {
             </TableHeader>
             <TableBody>
               {filtered.map((r) => (
-                <TableRow key={r.id} className="group">
+                <TableRow key={r.id}>
                   <TableCell className="font-medium">{r.title}</TableCell>
                   <TableCell>{r.propertyType}</TableCell>
                   <TableCell>{r.contactName}</TableCell>
@@ -172,7 +172,7 @@ export default function RentPage() {
                   </TableCell>
                   <TableCell><StatusBadge status={r.status} /></TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 opacity-100">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(r)}><Pencil className="h-3.5 w-3.5" /></Button>
                       <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteId(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                     </div>
