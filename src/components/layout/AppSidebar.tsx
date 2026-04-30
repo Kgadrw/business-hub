@@ -36,11 +36,6 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
         <button onClick={onToggle} className="text-sidebar-foreground hover:text-sidebar-primary transition-colors">
           <Menu className="h-5 w-5" />
         </button>
-        {!collapsed && (
-          <span className="ml-3 text-lg font-bold text-sidebar-foreground tracking-tight">
-            wegomanage
-          </span>
-        )}
       </div>
 
       <nav className="flex-1 py-4 space-y-1 px-2 overflow-y-auto scrollbar-thin">
@@ -62,6 +57,19 @@ export function AppSidebar({ collapsed, onToggle }: { collapsed: boolean; onTogg
       </nav>
 
       <div className="border-t border-sidebar-border p-3 space-y-2">
+        {!collapsed && (
+          <p className="px-3 text-xs text-sidebar-muted">
+            Powered by{" "}
+            <a
+              href="https://www.trippo.rw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-sidebar-foreground hover:text-sidebar-primary underline underline-offset-2"
+            >
+              Trippo
+            </a>
+          </p>
+        )}
         <button
           onClick={() => setNotifOpen(true)}
           className={cn(
